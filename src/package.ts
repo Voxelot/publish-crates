@@ -46,7 +46,7 @@ async function readManifest(path: string): Promise<RawManifest> {
         throw new Error(`Error when reading manifest file '${path}' (${error})`)
     }
     try {
-        return parse(raw) as RawManifest
+        return parse(raw)
     } catch (error) {
         throw new Error(`Error when parsing manifest file '${path}' (${error})`)
     }
@@ -92,15 +92,18 @@ export async function findPackages(
             throw new Error(`Missing package version at '${path}'`)
         }
         if (package_info.publish !== false) {
-            const resolve_dependencies = (
-                manifest_dependencies: RawDependencies | undefined,
-                publish_dependencies: Dependencies
-            ): void => {
+            const dependencies: Dependencies = {}
+
+            for (const manifest_dependencies of [
+                manifest.dependencies,
+                manifest['dev-dependencies'],
+                manifest['build-dependencies']
+            ]) {
                 if (typeof manifest_dependencies === 'object') {
                     for (const name in manifest_dependencies) {
                         const dependency = manifest_dependencies[name]
                         if (typeof dependency === 'string') {
-                            publish_dependencies[name] = {version: dependency}
+                            dependencies[name] = {version: dependency}
                         } else if (typeof dependency == 'object') {
                             if (!dependency.version) {
                                 throw new Error(
@@ -111,7 +114,7 @@ export async function findPackages(
                                 typeof dependency.package === 'string'
                                     ? dependency.package
                                     : name
-                            publish_dependencies[package_name] = {
+                            dependencies[package_name] = {
                                 version: dependency.version,
                                 path: dependency.path
                             }
@@ -119,12 +122,6 @@ export async function findPackages(
                     }
                 }
             }
-
-            const dependencies: Dependencies = {}
-            // resolve all types of crate dependencies (normal, dev, build)
-            resolve_dependencies(manifest.dependencies, dependencies)
-            resolve_dependencies(manifest['dev-dependencies'], dependencies)
-            resolve_dependencies(manifest['build-dependencies'], dependencies)
 
             packages[package_info.name] = {
                 path,
