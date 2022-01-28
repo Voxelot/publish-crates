@@ -3,7 +3,7 @@ import {findPackages, checkPackages, sortPackages} from '../src/package'
 import {githubHandle, lastCommitDate} from '../src/github'
 import {join} from 'path'
 import {exec} from '@actions/exec'
-const pkg_dir =  __dirname
+const pkg_dir = __dirname
 
 test('find packages', async () => {
     const packages = await findPackages(pkg_dir)
@@ -41,7 +41,14 @@ test('sort packages', async () => {
     const packages = await findPackages(pkg_dir)
     const sorted = sortPackages(packages)
 
-    expect(sorted).toEqual(['pkg-sys', 'pkg-lib', 'pkg-build', 'pkg-dev', 'pkg-bin', 'pkg-all'])
+    expect(sorted).toEqual([
+        'pkg-sys',
+        'pkg-lib',
+        'pkg-build',
+        'pkg-dev',
+        'pkg-bin',
+        'pkg-all'
+    ])
 })
 
 test('get crate versions', async () => {

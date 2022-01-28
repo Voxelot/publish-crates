@@ -67,10 +67,10 @@ async function run(): Promise<void> {
 
         info(`Sorting packages according to dependencies`)
         info(`presorted packages`)
-        console.log(JSON.stringify(packages))
+        info(JSON.stringify(packages))
         const sorted_packages = sortPackages(packages)
         info(`post-sorted packages`)
-        console.log(JSON.stringify(sorted_packages))
+        info(JSON.stringify(sorted_packages))
 
         for (const package_name of sorted_packages) {
             const package_info = packages[package_name]
