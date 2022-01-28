@@ -7,6 +7,16 @@ import {GitHubHandle, lastCommitDate} from './github'
 import {readFile, stat} from './utils'
 import {getCrateVersions} from './crates'
 
+interface RawDependencies {
+    [name: string]:
+        | string
+        | {
+              package?: string
+              version?: string
+              path?: string
+          }
+}
+
 interface RawManifest {
     workspace?: {
         members?: string[]
@@ -16,15 +26,9 @@ interface RawManifest {
         version?: string
         publish?: boolean
     }
-    dependencies?: {
-        [name: string]:
-            | string
-            | {
-                  package?: string
-                  version?: string
-                  path?: string
-              }
-    }
+    dependencies?: RawDependencies
+    'dev-dependencies'?: RawDependencies
+    'build-dependencies'?: RawDependencies
 }
 
 const manifest_filename = 'Cargo.toml'
@@ -88,30 +92,39 @@ export async function findPackages(
             throw new Error(`Missing package version at '${path}'`)
         }
         if (package_info.publish !== false) {
-            const dependencies: Dependencies = {}
-
-            if (typeof manifest.dependencies === 'object') {
-                for (const name in manifest.dependencies) {
-                    const dependency = manifest.dependencies[name]
-                    if (typeof dependency === 'string') {
-                        dependencies[name] = {version: dependency}
-                    } else if (typeof dependency == 'object') {
-                        if (!dependency.version) {
-                            throw new Error(
-                                `Missing dependency '${name}' version field`
-                            )
-                        }
-                        const package_name =
-                            typeof dependency.package === 'string'
-                                ? dependency.package
-                                : name
-                        dependencies[package_name] = {
-                            version: dependency.version,
-                            path: dependency.path
+            const resolve_dependencies = (
+                manifest_dependencies: RawDependencies | undefined,
+                publish_dependencies: Dependencies
+            ): void => {
+                if (typeof manifest_dependencies === 'object') {
+                    for (const name in manifest_dependencies) {
+                        const dependency = manifest_dependencies[name]
+                        if (typeof dependency === 'string') {
+                            publish_dependencies[name] = {version: dependency}
+                        } else if (typeof dependency == 'object') {
+                            if (!dependency.version) {
+                                throw new Error(
+                                    `Missing dependency '${name}' version field`
+                                )
+                            }
+                            const package_name =
+                                typeof dependency.package === 'string'
+                                    ? dependency.package
+                                    : name
+                            publish_dependencies[package_name] = {
+                                version: dependency.version,
+                                path: dependency.path
+                            }
                         }
                     }
                 }
             }
+
+            const dependencies: Dependencies = {}
+            // resolve all types of crate dependencies (normal, dev, build)
+            resolve_dependencies(manifest.dependencies, dependencies)
+            resolve_dependencies(manifest['dev-dependencies'], dependencies)
+            resolve_dependencies(manifest['build-dependencies'], dependencies)
 
             packages[package_info.name] = {
                 path,
