@@ -29,6 +29,7 @@ async function run(): Promise<void> {
         .split(/[\n\s]+/)
         .filter(arg => arg.length > 0)
     const registry_token = getInput('registry-token')
+    const registry = getInput('registry')
     const dry_run = getBooleanInput('dry-run')
     const check_repo = getBooleanInput('check-repo')
     const publish_delay = getIntegerInput('publish-delay')
@@ -51,7 +52,7 @@ async function run(): Promise<void> {
         info(`Found packages: ${package_names}`)
 
         info(`Checking packages consistency`)
-        let package_errors = await checkPackages(packages, github)
+        let package_errors = await checkPackages(packages, github, registry)
 
         for (const {message} of package_errors) {
             error(message)
@@ -105,6 +106,9 @@ async function run(): Promise<void> {
                     cwd: package_info.path,
                     env
                 }
+                if (registry !== 'https://crates.io') {
+                    exec_args.push(`--registry ${registry}`)
+                }
                 if (dry_run) {
                     const args_str = exec_args.join(' ')
                     warning(
@@ -116,7 +120,11 @@ async function run(): Promise<void> {
                 } else {
                     info(`Publishing package '${package_name}'`)
                     await exec('cargo', exec_args, exec_opts)
-                    await awaitCrateVersion(package_name, package_info.version)
+                    await awaitCrateVersion(
+                        package_name,
+                        package_info.version,
+                        registry
+                    )
                     if (publish_delay) {
                         await delay(publish_delay)
                     }

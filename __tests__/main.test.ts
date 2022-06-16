@@ -34,7 +34,7 @@ test('find packages', async () => {
 
 test('check packages', async () => {
     const packages = await findPackages(pkg_dir)
-    await checkPackages(packages, githubHandle())
+    await checkPackages(packages, githubHandle(), 'https://crates.io')
 }, 10000)
 
 test('sort packages', async () => {
@@ -52,7 +52,7 @@ test('sort packages', async () => {
 })
 
 test('get crate versions', async () => {
-    const versions = await getCrateVersions('serde')
+    const versions = await getCrateVersions('serde', 'https://crates.io')
 
     expect(versions).toBeDefined()
 
@@ -71,7 +71,7 @@ test('get crate versions', async () => {
 })
 
 test('await crate version', async () => {
-    await awaitCrateVersion('serde', '1.0.0', 10000)
+    await awaitCrateVersion('serde', '1.0.0', 'https://crates.io', 10000)
 }, 15000)
 
 test('await crate version timeout', async () => {
@@ -79,6 +79,7 @@ test('await crate version timeout', async () => {
         await awaitCrateVersion(
             'undefined-unexpected-unknown-abcxyz',
             '1.0.0',
+            'https://crates.io',
             10000
         )
     } catch (e) {

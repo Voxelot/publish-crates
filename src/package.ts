@@ -186,7 +186,8 @@ export interface CheckPackageError {
 
 export async function checkPackages(
     packages: Packages,
-    github: GitHubHandle
+    github: GitHubHandle,
+    registry: string
 ): Promise<CheckPackageError[]> {
     const tasks: Promise<void>[] = []
     const errors: CheckPackageError[] = []
@@ -196,7 +197,10 @@ export async function checkPackages(
 
         tasks.push(
             (async () => {
-                const published_versions = await getCrateVersions(package_name)
+                const published_versions = await getCrateVersions(
+                    package_name,
+                    registry
+                )
                 if (published_versions) {
                     const version_date = published_versions
                         .filter(({version}) => version === package_info.version)
@@ -264,11 +268,14 @@ export async function checkPackages(
                 // external dependency
                 tasks.push(
                     (async () => {
-                        const versions = await getCrateVersions(dependency_name)
+                        const versions = await getCrateVersions(
+                            dependency_name,
+                            registry
+                        )
                         if (!versions) {
                             errors.push({
                                 kind: 'unable-to-find-extern-dep',
-                                message: `Package '${package_name}' depends from external '${dependency_name}' which does not published on crates.io`
+                                message: `Package '${package_name}' depends from external '${dependency_name}' which does not published on ${registry}`
                             })
                         } else {
                             if (

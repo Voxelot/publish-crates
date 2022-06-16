@@ -22,8 +22,11 @@ interface VersionInfo {
 
 const client = new HttpClient('publish-crates')
 
-async function getCrateInfo(crate: string): Promise<CrateInfo | undefined> {
-    const url = `https://crates.io/api/v1/crates/${crate}`
+async function getCrateInfo(
+    crate: string,
+    registry: string
+): Promise<CrateInfo | undefined> {
+    const url = `${registry}/api/v1/crates/${crate}`
     const res = await client.get(url)
     if (res.message.statusCode === HttpCodes.NotFound) {
         return
@@ -31,7 +34,7 @@ async function getCrateInfo(crate: string): Promise<CrateInfo | undefined> {
     if (res.message.statusCode !== HttpCodes.OK) {
         const raw = await res.readBody()
         throw new Error(
-            `Error when requesting crate '${crate}' info from crates.io (status: ${res.message.statusCode}, contents: '${raw}')`
+            `Error when requesting crate '${crate}' info from ${registry} (status: ${res.message.statusCode}, contents: '${raw}')`
         )
     }
     const raw = await res.readBody()
@@ -49,9 +52,10 @@ export interface Version {
 }
 
 export async function getCrateVersions(
-    crate: string
+    crate: string,
+    registry: string
 ): Promise<Version[] | undefined> {
-    const data = await getCrateInfo(crate)
+    const data = await getCrateInfo(crate, registry)
     if (!data) {
         return
     }
@@ -66,9 +70,10 @@ export async function getCrateVersions(
 }
 
 export async function checkCrateAvailability(
+    registry: string,
     dl_path: string
 ): Promise<boolean> {
-    const url = `https://crates.io${dl_path}`
+    const url = `${registry}${dl_path}`
     const res = await client.head(url)
     return res.message.statusCode === HttpCodes.OK
 }
@@ -76,13 +81,14 @@ export async function checkCrateAvailability(
 export async function awaitCrateVersion(
     crate: string,
     version: string,
+    registry: string,
     timeout = 60000
 ): Promise<void> {
     const started = Date.now()
     let dl_path: string
     for (;;) {
         await delay(5000)
-        const versions = await getCrateVersions(crate)
+        const versions = await getCrateVersions(crate, registry)
         if (
             versions &&
             versions.some(version_info => version_info.version === version)
@@ -99,7 +105,7 @@ export async function awaitCrateVersion(
         }
     }
     for (;;) {
-        if (await checkCrateAvailability(dl_path)) {
+        if (await checkCrateAvailability(registry, dl_path)) {
             break
         }
         if (Date.now() - started > timeout) {

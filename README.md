@@ -13,9 +13,6 @@
 - Publishes updated crates in right order according to dependencies
 - Awaits when published crate will be available in registry before publishing crates which depends from it
 - Works fine in workspaces without cyclic dependencies
-
-## Unimplemented features
-
 - Support different registries than [crates.io](https://crates.io/)
 
 ## Inputs
@@ -23,6 +20,7 @@
 - `token` GitHub API token (`github.token` by default)
 - `path` Sets path to crate or workspace ('.' by default)
 - `args` Extra arguments for `cargo publish` command
+- `registry` Set to the base url of an alternate registry. Default registry is crates.io.
 - `registry-token` Cargo registry token (not used when `dry-run: true`)
 - `dry-run` Set to `true` to bypass exec `cargo publish`
 - `check-repo` Set to `false` to bypass check local packages for modifications since last published version

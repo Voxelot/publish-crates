@@ -14,6 +14,10 @@ inputs:
   args:
     description: 'Extra arguments for cargo publish'
     default: ''
+  registry:
+    description: 'Override the default crates.io registry'
+    required: false
+    default: 'https://crates.io'
   registry-token:
     description: 'Cargo registry token'
     default: ''
